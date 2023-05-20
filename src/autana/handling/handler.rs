@@ -84,15 +84,14 @@ impl<Printer : AbstractLanguagePrinter<usize>>
 
     fn collect_next_steps(context: &NfaWordAnalysisContext<Printer>,
                           _param : &NfaWordAnalysisParameterization,
-                          parent_state_id: u32,
                           parent_node_kind: &NfaWordAnalysisNodeKind)
-                -> (u32, Vec<GenericStep<NfaWordAnalysisStepKind>>) {
+                -> Vec<NfaWordAnalysisStepKind> {
 
         match context.word.get(parent_node_kind.pos_in_trace) {
             None => {
                 // this means parent_node_kind.pos_in_trace >= context.trace.len()
                 // i.e. the trace is already emptied
-                (0,vec![])
+                vec![]
             },
             Some( letter) => {
                 // here we have the letter which is to be read in the NFA
@@ -121,10 +120,7 @@ impl<Printer : AbstractLanguagePrinter<usize>>
                         }
                     }
                 };
-                let step = GenericStep::new(parent_state_id,
-                                            0,
-                                            kind);
-                (1,vec![step])
+                vec![kind]
             }
         }
     }

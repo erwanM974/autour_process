@@ -1,6 +1,6 @@
 [package]
 name = "autour_process"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Erwan Mahe"]
 edition = "2021"
 
@@ -20,6 +20,6 @@ maplit = "1.0.2"
 strum = "0.24.1"                                # for IntoStaticStr
 strum_macros = "0.24.3"                         # ...
 graphviz_dot_builder = "0.1.2"                  # for generating dot files to be used with graphviz
-graph_process_manager_core = "0.1.7"            #
-graph_process_manager_loggers = "0.1.8"         #
+graph_process_manager_core = "0.1.9"            #
+graph_process_manager_loggers = "0.1.10"         #
 autour_core = "0.1.2"

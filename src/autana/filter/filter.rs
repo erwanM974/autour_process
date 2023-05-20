@@ -16,23 +16,25 @@ limitations under the License.
 
 
 
+use std::fmt;
 use graph_process_manager_core::handler::filter::AbstractFilter;
 use crate::autana::filter::elim::NfaWordAnalysisFilterEliminationKind;
 
 
 pub struct NfaWordAnalysisFilterCriterion {}
 
-impl std::string::ToString for NfaWordAnalysisFilterCriterion {
-    fn to_string(&self) -> String {
-        "".to_string()
+impl fmt::Display for NfaWordAnalysisFilterCriterion {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f,"")
     }
 }
 
 pub struct NfaWordAnalysisFilter {}
 
-impl std::string::ToString for NfaWordAnalysisFilter {
-    fn to_string(&self) -> String {
-        "".to_string()
+
+impl fmt::Display for NfaWordAnalysisFilter {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f,"")
     }
 }
 

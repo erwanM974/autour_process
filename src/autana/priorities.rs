@@ -17,6 +17,7 @@ limitations under the License.
 
 
 
+use std::fmt;
 use graph_process_manager_core::delegate::priorities::AbstractPriorities;
 use crate::autana::step::NfaWordAnalysisStepKind;
 
@@ -24,9 +25,9 @@ use crate::autana::step::NfaWordAnalysisStepKind;
 pub struct NfaWordAnalysisPriorities {}
 
 
-impl std::string::ToString for NfaWordAnalysisPriorities {
-    fn to_string(&self) -> String {
-        "".to_string()
+impl fmt::Display for NfaWordAnalysisPriorities {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f,"")
     }
 }
 

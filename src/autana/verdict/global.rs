@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 
+use std::fmt;
 use graph_process_manager_core::manager::verdict::AbstractGlobalVerdict;
 use crate::autana::verdict::local::NfaWordAnalysisLocalVerdict;
 
@@ -56,16 +57,16 @@ pub enum NfaWordAnalysisGlobalVerdict{
     Pass
 }
 
-impl std::string::ToString for NfaWordAnalysisGlobalVerdict {
-    fn to_string(&self) -> String {
+impl fmt::Display for NfaWordAnalysisGlobalVerdict {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             NfaWordAnalysisGlobalVerdict::HasFailures(ref fails) => {
-                format!("has deviations : {} weak and {} strong",
+                write!(f,"has deviations : {} weak and {} strong",
                         fails.get_weak_deviations(),
                         fails.get_strong_deviations())
             },
             NfaWordAnalysisGlobalVerdict::Pass => {
-                "no warnings".to_string()
+                write!(f,"no warnings")
             }
         }
     }

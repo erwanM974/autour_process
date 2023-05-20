@@ -16,10 +16,12 @@ limitations under the License.
 
 
 
+use std::fmt;
+
 pub struct NfaWordAnalysisFilterEliminationKind {}
 
-impl std::string::ToString for NfaWordAnalysisFilterEliminationKind {
-    fn to_string(&self) -> String {
-        "".to_string()
+impl fmt::Display for NfaWordAnalysisFilterEliminationKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "")
     }
 }

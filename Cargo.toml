@@ -1,6 +1,6 @@
 [package]
 name = "autour_process"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Erwan Mahe"]
 edition = "2021"
 
@@ -8,8 +8,8 @@ license = "Apache-2.0"
 description = "AUTOmata Utilities and Representation (AUTOUR) is a small toolbox to experiment with various kinds of automata and draw them"
 
 readme = "README.md"
-repository = "https://github.com/erwanM974/autour"
-homepage = "https://github.com/erwanM974/autour"
+repository = "https://github.com/erwanM974/autour_process"
+homepage = "https://github.com/erwanM974/autour_process"
 
 keywords = ["automata", "dfa", "nfa", "gnfa", "regex"]
 

@@ -16,27 +16,28 @@ limitations under the License.
 
 
 
+use std::fmt;
+
 pub enum NfaWordAnalysisLocalVerdict{
     WeakDeviation,
     StrongDeviation,
     EmptiedTrace
 }
 
-impl std::string::ToString for NfaWordAnalysisLocalVerdict {
-
-    fn to_string(&self) -> String {
+impl fmt::Display for NfaWordAnalysisLocalVerdict {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             NfaWordAnalysisLocalVerdict::WeakDeviation => {
-                "WeakDeviation".to_string()
+                write!(f,"WeakDeviation")
             },
             NfaWordAnalysisLocalVerdict::StrongDeviation => {
-                "StrongDeviation".to_string()
+                write!(f,"StrongDeviation")
             },
             NfaWordAnalysisLocalVerdict::EmptiedTrace => {
-                "EmptiedTrace".to_string()
+                write!(f,"EmptiedTrace")
             }
         }
     }
-
 }
+
 

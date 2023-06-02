@@ -26,13 +26,12 @@ use graph_process_manager_core::manager::config::AbstractNodeKind;
 #[derive(Clone, PartialEq, Debug, Eq, Hash)]
 pub struct NfaWordAnalysisNodeKind {
     pub active_states : BTreeSet<usize>,
-    pub is_reset : bool, // if on the last step we have made a reset
     pub pos_in_trace : usize
 }
 
 impl NfaWordAnalysisNodeKind {
-    pub fn new(active_states: BTreeSet<usize>, is_reset : bool, pos_in_trace: usize) -> Self {
-        NfaWordAnalysisNodeKind { active_states, is_reset, pos_in_trace }
+    pub fn new(active_states: BTreeSet<usize>, pos_in_trace: usize) -> Self {
+        NfaWordAnalysisNodeKind { active_states, pos_in_trace }
     }
 }
 

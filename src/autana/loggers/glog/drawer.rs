@@ -28,8 +28,9 @@ use graphviz_dot_builder::item::node::style::{GraphvizNodeStyleItem, GvNodeShape
 use graphviz_dot_builder::traits::{DotBuildable, DotPrintable, GraphVizOutputFormat};
 
 use crate::autana::conf::{NfaWordAnalysisConfig, NfaWordAnalysisStaticLocalVerdictAnalysisProof};
-use crate::autana::context::{NfaWordAnalysisContext, NfaWordAnalysisParameterization};
+use crate::autana::context::NfaWordAnalysisContext;
 use crate::autana::node::NfaWordAnalysisNodeKind;
+use crate::autana::param::NfaWordAnalysisParameterization;
 use crate::autana::step::NfaWordAnalysisStepKind;
 use crate::autana::verdict::local::NfaWordAnalysisLocalVerdict;
 
@@ -61,10 +62,10 @@ impl<Printer : AbstractLanguagePrinter<usize>>
             NfaWordAnalysisLocalVerdict::EmptiedTrace => {
                 GraphvizColor::green
             },
-            NfaWordAnalysisLocalVerdict::WeakDeviation => {
+            NfaWordAnalysisLocalVerdict::Deviation => {
                 GraphvizColor::orange
             },
-            NfaWordAnalysisLocalVerdict::StrongDeviation => {
+            NfaWordAnalysisLocalVerdict::FailureToEmptyTrace => {
                 GraphvizColor::red
             }
         }
@@ -85,19 +86,8 @@ impl<Printer : AbstractLanguagePrinter<usize>>
                         origin_state_id: u32,
                         target_state_id: u32,
                         step: &NfaWordAnalysisStepKind) -> GraphVizNode {
-        let label = match step {
-            NfaWordAnalysisStepKind::Skip => {
-                "skip"
-            },
-            NfaWordAnalysisStepKind::Reset => {
-                "reset"
-            },
-            NfaWordAnalysisStepKind::ReadNext(_) => {
-                "read"
-            }
-        };
         let style = vec![
-            GraphvizNodeStyleItem::Label(label.to_string()),
+            GraphvizNodeStyleItem::Label(step.to_string()),
             GraphvizNodeStyleItem::Shape(GvNodeShape::Rectangle)
         ];
         GraphVizNode::new(format!("s_{}_{}", origin_state_id, target_state_id), style)

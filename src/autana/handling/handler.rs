@@ -24,9 +24,10 @@ use graph_process_manager_core::handler::handler::AbstractProcessHandler;
 use graph_process_manager_core::queued_steps::step::GenericStep;
 
 use crate::autana::conf::{NfaWordAnalysisConfig, NfaWordAnalysisStaticLocalVerdictAnalysisProof};
-use crate::autana::context::{NfaWordAnalysisContext, NfaWordAnalysisParameterization, NfaWordAnalysisResetOn};
+use crate::autana::context::NfaWordAnalysisContext;
 use crate::autana::filter::filter::NfaWordAnalysisFilterCriterion;
 use crate::autana::node::NfaWordAnalysisNodeKind;
+use crate::autana::param::{NfaWordAnalysisParameterization, NfaWordAnalysisPolicy};
 use crate::autana::step::NfaWordAnalysisStepKind;
 use crate::autana::verdict::local::NfaWordAnalysisLocalVerdict;
 
@@ -43,32 +44,23 @@ impl<Printer : AbstractLanguagePrinter<usize>>
                         _new_state_id: u32,
                         _node_counter: u32) -> NfaWordAnalysisNodeKind {
         match &step_to_process.kind {
-            NfaWordAnalysisStepKind::Skip => {
-                NfaWordAnalysisNodeKind::new(parent_state.kind.active_states.clone(),
-                                              parent_state.kind.is_reset,
-                                              parent_state.kind.pos_in_trace + 1)
-            },
-            NfaWordAnalysisStepKind::Reset => {
-                let new_active : BTreeSet<usize> =
-                match param.reset {
-                    NfaWordAnalysisResetOn::Initials => {
-                        context.nfa.initials.iter().cloned().collect()
-                    },
-                    NfaWordAnalysisResetOn::AllStates => {
-                        (0..context.nfa.transitions.len()).collect()
-                    },
-                    NfaWordAnalysisResetOn::Specific(ref reset_states) => {
-                        reset_states.iter().cloned().collect()
-                    }
-                };
-                NfaWordAnalysisNodeKind::new(new_active,
-                                              true,
-                                              parent_state.kind.pos_in_trace)
-            },
             NfaWordAnalysisStepKind::ReadNext(new_active) => {
                 NfaWordAnalysisNodeKind::new(new_active.clone(),
-                                              false,
                                               parent_state.kind.pos_in_trace + 1)
+            },
+            NfaWordAnalysisStepKind::ResetAndOrSkip(may_reset,may_skip) => {
+                let new_active = if *may_reset {
+                        param.policy.get_reset_policy().unwrap().get_reset_states(&context.nfa)
+                    } else {
+                        parent_state.kind.active_states.clone()
+                    };
+                let new_pos = if *may_skip {
+                    parent_state.kind.pos_in_trace + 1
+                } else {
+                    parent_state.kind.pos_in_trace
+                };
+                NfaWordAnalysisNodeKind::new(new_active,
+                                             new_pos)
             }
         }
     }
@@ -83,7 +75,7 @@ impl<Printer : AbstractLanguagePrinter<usize>>
     }
 
     fn collect_next_steps(context: &NfaWordAnalysisContext<Printer>,
-                          _param : &NfaWordAnalysisParameterization,
+                          param : &NfaWordAnalysisParameterization,
                           parent_node_kind: &NfaWordAnalysisNodeKind)
                 -> Vec<NfaWordAnalysisStepKind> {
 
@@ -97,79 +89,72 @@ impl<Printer : AbstractLanguagePrinter<usize>>
                 // here we have the letter which is to be read in the NFA
                 // from the current set of active states
                 let as_hashset : HashSet<usize> = parent_node_kind.active_states.iter().cloned().collect();
-                let kind = match context.nfa.run_transition(&as_hashset,letter) {
-                    Err(_) => {
-                        panic!("should not happen")
-                    },
-                    Ok( new_active) => {
-                        if new_active.is_empty() {
-                            // here the letter leads nowhere
-                            // hence we may either reset the NFA or skip the letter
-                            if parent_node_kind.is_reset {
-                                // here we had already reset the NFA
-                                // hence we have a strong deviation
-                                // and we must skip
-                                NfaWordAnalysisStepKind::Skip
+                let new_active = context.nfa.run_transition(&as_hashset,letter).unwrap();
+                if new_active.is_empty() {
+                    // here the letter leads nowhere
+                    // hence we may either reset the NFA and/or skip the letter
+                    match &param.policy {
+                        NfaWordAnalysisPolicy::StopAtDeviation => {
+                            vec![]
+                        },
+                        NfaWordAnalysisPolicy::SkipAndMayReset(may_reset) => {
+                            vec![NfaWordAnalysisStepKind::ResetAndOrSkip(may_reset.is_some(),true)]
+                        },
+                        NfaWordAnalysisPolicy::TryResetThenMaySkip(reset,skip) => {
+                            let reset_active = reset.get_reset_states(&context.nfa);
+                            // ***
+                            if reset_active.is_subset(&parent_node_kind.active_states) {
+                                // if the set of active state in parent already includes the reset states then reset is useless
+                                if *skip {
+                                    vec![NfaWordAnalysisStepKind::ResetAndOrSkip(true,true)]
+                                } else {
+                                    vec![]
+                                }
                             } else {
-                                // here we try reset to solve weak deviation
-                                NfaWordAnalysisStepKind::Reset
+                                // here reset may be of use
+                                let reset_active_as_hashset : HashSet<usize> = reset_active.into_iter().collect();
+                                let new_active_after_reset_and_run = context.nfa.run_transition(&reset_active_as_hashset,letter).unwrap();
+                                if new_active_after_reset_and_run.is_empty() {
+                                    // here reset did not allow running the letter
+                                    if *skip {
+                                        vec![NfaWordAnalysisStepKind::ResetAndOrSkip(true,true)]
+                                    } else {
+                                        vec![]
+                                    }
+                                } else {
+                                    // here reset allows running the letter and hence do not skip
+                                    vec![NfaWordAnalysisStepKind::ResetAndOrSkip(true,false)]
+                                }
                             }
-                        } else {
-                            let as_btreeset : BTreeSet<usize> = new_active.into_iter().collect();
-                            NfaWordAnalysisStepKind::ReadNext(as_btreeset)
                         }
                     }
-                };
-                vec![kind]
+                } else {
+                    let as_btreeset : BTreeSet<usize> = new_active.into_iter().collect();
+                    vec![NfaWordAnalysisStepKind::ReadNext(as_btreeset)]
+                }
             }
         }
     }
 
-    fn get_local_verdict_when_no_child(_context: &NfaWordAnalysisContext<Printer>,
+    fn get_local_verdict_when_no_child(context: &NfaWordAnalysisContext<Printer>,
                                        _param : &NfaWordAnalysisParameterization,
-                                       _node_kind: &NfaWordAnalysisNodeKind) -> NfaWordAnalysisLocalVerdict {
-        NfaWordAnalysisLocalVerdict::EmptiedTrace
+                                       node_kind: &NfaWordAnalysisNodeKind) -> NfaWordAnalysisLocalVerdict {
+        if context.word.get(node_kind.pos_in_trace).is_some() {
+            NfaWordAnalysisLocalVerdict::FailureToEmptyTrace
+        } else {
+            NfaWordAnalysisLocalVerdict::EmptiedTrace
+        }
     }
 
     fn get_local_verdict_from_static_analysis(context: &NfaWordAnalysisContext<Printer>,
-                                              _param : &NfaWordAnalysisParameterization,
+                                              param : &NfaWordAnalysisParameterization,
                                               node_kind: &mut NfaWordAnalysisNodeKind)
             -> Option<(NfaWordAnalysisLocalVerdict,NfaWordAnalysisStaticLocalVerdictAnalysisProof)> {
-        match context.word.get(node_kind.pos_in_trace) {
-            None => {
-                // this means parent_node_kind.pos_in_trace >= context.trace.len()
-                // i.e. the trace is already emptied
-                None
-            },
-            Some( letter) => {
-                // here we have the letter which is to be read in the NFA
-                // from the current set of active states
-                let as_hashset : HashSet<usize> = node_kind.active_states.iter().cloned().collect();
-                match context.nfa.run_transition(&as_hashset,letter) {
-                    Err(_) => {
-                        panic!("should not happen")
-                    },
-                    Ok( new_active) => {
-                        if new_active.is_empty() {
-                            // here the letter leads nowhere
-                            // hence we may either reset the NFA or skip the letter
-                            if node_kind.is_reset {
-                                // here we had already reset the NFA
-                                // hence we have a strong deviation
-                                // and we must skip
-                                Some((NfaWordAnalysisLocalVerdict::StrongDeviation,
-                                      NfaWordAnalysisStaticLocalVerdictAnalysisProof{}))
-                            } else {
-                                // here we try reset to solve weak deviation
-                                Some((NfaWordAnalysisLocalVerdict::WeakDeviation,
-                                      NfaWordAnalysisStaticLocalVerdictAnalysisProof{}))
-                            }
-                        } else {
-                            None
-                        }
-                    }
-                }
-            }
+        let next = Self::collect_next_steps(context,param,node_kind);
+        if let Some(NfaWordAnalysisStepKind::ResetAndOrSkip(_,_)) = next.get(0) {
+            Some((NfaWordAnalysisLocalVerdict::Deviation,NfaWordAnalysisStaticLocalVerdictAnalysisProof{}))
+        } else {
+            None
         }
     }
 

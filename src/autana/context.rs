@@ -14,9 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use std::collections::HashSet;
+
 use autour_core::nfa::nfa::AutNFA;
-use graph_process_manager_core::manager::config::AbstractProcessParameterization;
 use autour_core::traits::repr::AbstractLanguagePrinter;
 
 
@@ -29,40 +28,5 @@ pub struct NfaWordAnalysisContext<Printer : AbstractLanguagePrinter<usize>> {
 impl<Printer: AbstractLanguagePrinter<usize>> NfaWordAnalysisContext<Printer> {
     pub fn new(nfa: AutNFA<usize>, printer: Printer, word: Vec<usize>) -> Self {
         Self { nfa, printer, word }
-    }
-}
-
-
-pub enum NfaWordAnalysisResetOn {
-    Initials,
-    AllStates,
-    Specific(HashSet<usize>)
-}
-
-pub struct NfaWordAnalysisParameterization {
-    pub reset : NfaWordAnalysisResetOn
-}
-
-impl NfaWordAnalysisParameterization {
-    pub fn new(reset: NfaWordAnalysisResetOn) -> Self {
-        Self { reset }
-    }
-}
-
-impl AbstractProcessParameterization for NfaWordAnalysisParameterization {
-    fn get_param_as_strings(&self) -> Vec<String> {
-        let mut params = vec!["process = NFA word analysis".to_string()];
-        match self.reset {
-            NfaWordAnalysisResetOn::Initials => {
-                params.push( "reset = at NFA initial states".to_string());
-            },
-            NfaWordAnalysisResetOn::AllStates => {
-                params.push( "reset = from all states".to_string());
-            },
-            NfaWordAnalysisResetOn::Specific(ref res_states) => {
-                params.push( format!("reset = on specific reset states : {:?}", res_states));
-            }
-        }
-        params
     }
 }

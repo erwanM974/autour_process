@@ -26,4 +26,5 @@ pub mod filter;
 pub mod verdict;
 pub mod handling;
 pub mod loggers;
+pub mod param;
 

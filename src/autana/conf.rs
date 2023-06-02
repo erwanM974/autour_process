@@ -20,11 +20,12 @@ use graph_process_manager_core::manager::config::AbstractProcessConfiguration;
 use autour_core::traits::repr::AbstractLanguagePrinter;
 
 
-use crate::autana::context::{NfaWordAnalysisContext, NfaWordAnalysisParameterization};
+use crate::autana::context::NfaWordAnalysisContext;
 use crate::autana::filter::elim::NfaWordAnalysisFilterEliminationKind;
 use crate::autana::filter::filter::NfaWordAnalysisFilterCriterion;
 use crate::autana::handling::handler::NfaWordAnalysisProcessHandler;
 use crate::autana::node::NfaWordAnalysisNodeKind;
+use crate::autana::param::NfaWordAnalysisParameterization;
 use crate::autana::priorities::NfaWordAnalysisPriorities;
 use crate::autana::step::NfaWordAnalysisStepKind;
 use crate::autana::verdict::global::NfaWordAnalysisGlobalVerdict;

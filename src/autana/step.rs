@@ -16,11 +16,47 @@ limitations under the License.
 
 
 use std::collections::BTreeSet;
+use std::fmt;
+use std::fmt::Formatter;
+
 
 pub enum NfaWordAnalysisStepKind {
-    ReadNext(BTreeSet<usize>), // contains new set of active states which must be non empty
-    Reset, // reset the current set of active states to all states
-    Skip // skip the next action in the trace
+    // ***
+    // read the next letter in the word and go to next set of active states
+    // contains the new set of active states which must be non empty
+    ReadNext(BTreeSet<usize>),
+    // ***
+    // on deviation may reset active states and/or skip the next letter in the word
+    // first arg if reset
+    // second arg if skip
+    ResetAndOrSkip(bool,bool)
 }
+
+impl fmt::Display for NfaWordAnalysisStepKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            NfaWordAnalysisStepKind::ReadNext(_) => {
+                write!(f,"read")
+            },
+            NfaWordAnalysisStepKind::ResetAndOrSkip(reset,skip) => {
+                match (reset,skip) {
+                    (true,true) => {
+                        write!(f,"skip and reset")
+                    },
+                    (true,false) => {
+                        write!(f,"reset")
+                    },
+                    (false,true) => {
+                        write!(f,"skip")
+                    },
+                    (false,false) => {
+                        panic!()
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 

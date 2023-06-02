@@ -17,56 +17,45 @@ limitations under the License.
 
 use std::fmt;
 use graph_process_manager_core::manager::verdict::AbstractGlobalVerdict;
+
 use crate::autana::verdict::local::NfaWordAnalysisLocalVerdict;
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub struct NfaWordAnalysisFailures {
-    // when we reach a point where the next action can't be read from the current set of active states
-    // but after a reset, this action can then be read and the analysis can continue
-    weak_deviations : u32,
-    // when even after a reset the action can't be read, this means a strong deviation: it is an
-    // action that cannot be expressed from any of the reset states
-    strong_deviations : u32
-}
-
-impl NfaWordAnalysisFailures {
-    pub fn new(weak_deviations: u32, strong_deviations: u32) -> Self {
-        NfaWordAnalysisFailures { weak_deviations, strong_deviations }
-    }
-    pub fn add_weak_deviation(self) -> Self {
-        NfaWordAnalysisFailures::new(self.weak_deviations +1, self.strong_deviations)
-    }
-    pub fn add_strong_deviation(self) -> Self {
-        NfaWordAnalysisFailures::new(self.weak_deviations, self.strong_deviations+1)
-    }
-    pub fn get_weak_deviations(&self) -> u32 {
-        // because each time we have a strong deviation we:
-        // increment weak dev when we perform reset
-        // and if this doesn't work we then increment strong dev when we perform skip
-        self.weak_deviations - self.strong_deviations
-    }
-    pub fn get_strong_deviations(&self) -> u32 {
-        self.strong_deviations
-    }
-}
 
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub enum NfaWordAnalysisGlobalVerdict{
-    HasFailures(NfaWordAnalysisFailures),
-    Pass
+pub struct NfaWordAnalysisGlobalVerdict{
+    pub deviations : u32,
+    pub emptied_trace : bool
+}
+
+impl NfaWordAnalysisGlobalVerdict {
+    pub fn new(deviations: u32, emptied_trace: bool) -> Self {
+        Self { deviations, emptied_trace }
+    }
 }
 
 impl fmt::Display for NfaWordAnalysisGlobalVerdict {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            NfaWordAnalysisGlobalVerdict::HasFailures(ref fails) => {
-                write!(f,"has deviations : {} weak and {} strong",
-                        fails.get_weak_deviations(),
-                        fails.get_strong_deviations())
-            },
-            NfaWordAnalysisGlobalVerdict::Pass => {
-                write!(f,"no warnings")
+        if self.emptied_trace {
+            match self.deviations {
+                0 => {
+                    write!(f,"re-enacted trace without deviations")
+                },
+                1 => {
+                    write!(f,"re-enacted trace with 1 deviation")
+                },
+                x => {
+                    write!(f,"re-enacted trace with {:} deviations", x)
+                }
+            }
+        } else {
+            match self.deviations {
+                0 => {
+                    write!(f,"failed to re-enact trace")
+                },
+                x => {
+                    write!(f,"failed to re-enact trace ({:} deviations)", x)
+                }
             }
         }
     }
@@ -79,34 +68,20 @@ impl AbstractGlobalVerdict<NfaWordAnalysisLocalVerdict> for NfaWordAnalysisGloba
     }
 
     fn get_baseline_verdict() -> Self {
-        NfaWordAnalysisGlobalVerdict::Pass
+        NfaWordAnalysisGlobalVerdict::new(0,false)
     }
 
     fn update_with_local_verdict(self,
                                  local_verdict: &NfaWordAnalysisLocalVerdict) -> Self {
         match local_verdict {
             NfaWordAnalysisLocalVerdict::EmptiedTrace => {
-                self
+                NfaWordAnalysisGlobalVerdict::new(self.deviations,true)
             },
-            NfaWordAnalysisLocalVerdict::WeakDeviation => {
-                match self {
-                    NfaWordAnalysisGlobalVerdict::Pass => {
-                        NfaWordAnalysisGlobalVerdict::HasFailures(NfaWordAnalysisFailures::new(1,0))
-                    },
-                    NfaWordAnalysisGlobalVerdict::HasFailures(failures) => {
-                        NfaWordAnalysisGlobalVerdict::HasFailures(failures.add_weak_deviation())
-                    }
-                }
+            NfaWordAnalysisLocalVerdict::FailureToEmptyTrace => {
+                NfaWordAnalysisGlobalVerdict::new(self.deviations,false)
             },
-            NfaWordAnalysisLocalVerdict::StrongDeviation => {
-                match self {
-                    NfaWordAnalysisGlobalVerdict::Pass => {
-                        NfaWordAnalysisGlobalVerdict::HasFailures(NfaWordAnalysisFailures::new(0,1))
-                    },
-                    NfaWordAnalysisGlobalVerdict::HasFailures(failures) => {
-                        NfaWordAnalysisGlobalVerdict::HasFailures(failures.add_strong_deviation())
-                    }
-                }
+            NfaWordAnalysisLocalVerdict::Deviation => {
+                NfaWordAnalysisGlobalVerdict::new(self.deviations + 1,self.emptied_trace)
             }
         }
     }

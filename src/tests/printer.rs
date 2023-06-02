@@ -26,14 +26,8 @@ impl TestNFAPrinter {
         TestNFAPrinter { map }
     }
 
-    pub fn get_printer(lf_num : usize, ms_num : usize) -> Self {
-        let mut map = vec![];
-        for lf_id in 0..lf_num {
-            for ms_id in 0..ms_num {
-                map.push(format!("l{}!m{}", lf_id+1,ms_id+1));
-                map.push(format!("l{}?m{}", lf_id+1,ms_id+1));
-            }
-        }
+    pub fn get_printer() -> Self {
+        let map = vec!["a","b","c","d","e","f"].iter().map(|x| x.to_string()).collect();
         Self::new(map)
     }
 }

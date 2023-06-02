@@ -19,19 +19,19 @@ limitations under the License.
 use std::fmt;
 
 pub enum NfaWordAnalysisLocalVerdict{
-    WeakDeviation,
-    StrongDeviation,
+    Deviation,
+    FailureToEmptyTrace,
     EmptiedTrace
 }
 
 impl fmt::Display for NfaWordAnalysisLocalVerdict {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            NfaWordAnalysisLocalVerdict::WeakDeviation => {
-                write!(f,"WeakDeviation")
+            NfaWordAnalysisLocalVerdict::Deviation => {
+                write!(f,"Deviation")
             },
-            NfaWordAnalysisLocalVerdict::StrongDeviation => {
-                write!(f,"StrongDeviation")
+            NfaWordAnalysisLocalVerdict::FailureToEmptyTrace => {
+                write!(f,"FailureToEmptyTrace")
             },
             NfaWordAnalysisLocalVerdict::EmptiedTrace => {
                 write!(f,"EmptiedTrace")

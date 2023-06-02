@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 use graphviz_dot_builder::traits::GraphVizOutputFormat;
@@ -28,9 +27,10 @@ use graph_process_manager_core::manager::manager::GenericProcessManager;
 use autour_core::nfa::nfa::AutNFA;
 
 use crate::autana::conf::NfaWordAnalysisConfig;
-use crate::autana::context::{NfaWordAnalysisContext, NfaWordAnalysisParameterization, NfaWordAnalysisResetOn};
+use crate::autana::context::NfaWordAnalysisContext;
 use crate::autana::loggers::glog::drawer::NfaWordAnalysisProcessDrawer;
 use crate::autana::node::NfaWordAnalysisNodeKind;
+use crate::autana::param::{NfaWordAnalysisParameterization};
 use crate::autana::priorities::NfaWordAnalysisPriorities;
 use crate::autana::step::NfaWordAnalysisStepKind;
 use crate::tests::printer::TestNFAPrinter;
@@ -38,8 +38,8 @@ use crate::tests::printer::TestNFAPrinter;
 
 pub fn ana_test(output_name : String,
                 printer : TestNFAPrinter,
+                param : NfaWordAnalysisParameterization,
                 nfa : AutNFA<usize>,
-                init_active_states : BTreeSet<usize>,
                 trace : Vec<String>) {
 
     let fibo_buf : PathBuf = ["c:\\", "Users", "ErwanMahe", "IdeaProjects", "autour_process", "test"].iter().collect();
@@ -54,17 +54,17 @@ pub fn ana_test(output_name : String,
         fibo_buf.clone().into_os_string().into_string().unwrap(),
         format!("proc_{}",output_name));
 
-    let init_node = NfaWordAnalysisNodeKind::new(init_active_states,false,0);
-
     let word : Vec<usize> = trace.iter().map(
                                             |x| printer.map.iter().position(|y| y == x).unwrap()
                                         ).collect();
+    let init_node = param.make_init_node(&nfa);
     let process_ctx : NfaWordAnalysisContext<TestNFAPrinter> = NfaWordAnalysisContext::new(nfa,printer,word);
     let priorities : GenericProcessPriorities<NfaWordAnalysisPriorities> = GenericProcessPriorities::new(NfaWordAnalysisPriorities{},false);
     let delegate : GenericProcessDelegate<NfaWordAnalysisStepKind,NfaWordAnalysisNodeKind,NfaWordAnalysisPriorities> = GenericProcessDelegate::new(QueueSearchStrategy::BFS,
                                                                                                                   priorities);
+
     let mut manager : GenericProcessManager<NfaWordAnalysisConfig<TestNFAPrinter>> = GenericProcessManager::new(process_ctx,
-                                                                                                                NfaWordAnalysisParameterization::new(NfaWordAnalysisResetOn::AllStates),
+                                                                                                                param,
                                                                                      delegate,
                                                                                      vec![],
                                                                                      vec![Box::new(graphic_logger)],

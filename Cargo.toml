@@ -22,4 +22,4 @@ strum_macros = "0.24.3"                         # ...
 graphviz_dot_builder = "0.1.2"                  # for generating dot files to be used with graphviz
 graph_process_manager_core = "0.1.10"            #
 graph_process_manager_loggers = "0.1.12"         #
-autour_core = "0.1.3"
+autour_core = "0.1.4"
